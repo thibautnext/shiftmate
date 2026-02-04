@@ -1,27 +1,59 @@
-import Link from 'next/link'
-import { Calendar, Users, Clock, Settings, LogOut, LayoutDashboard } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import LogoutButton from '@/components/LogoutButton'
+'use client'
 
-export default async function DashboardLayout({
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
+import { Calendar, Users, Clock, Settings, LayoutDashboard } from 'lucide-react'
+import { getUser, getOrganisationByOwner } from '@/lib/api'
+import { LogoutButton } from '@/components/LogoutButton'
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const router = useRouter()
+  const pathname = usePathname()
+  const [user, setUser] = useState<any>(null)
+  const [orgName, setOrgName] = useState<string>('')
+  const [loading, setLoading] = useState(true)
 
-  if (!user) {
-    redirect('/login')
+  useEffect(() => {
+    const currentUser = getUser()
+    if (!currentUser) {
+      router.push('/login')
+      return
+    }
+    setUser(currentUser)
+    
+    // Fetch org name
+    if (currentUser.organisationId) {
+      getOrganisationByOwner(currentUser.id)
+        .then(org => {
+          if (org) setOrgName(org.name)
+        })
+        .catch(() => {})
+    }
+    
+    setLoading(false)
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500"></div>
+      </div>
+    )
   }
 
-  // Get organisation
-  const { data: org } = await supabase
-    .from('shiftmate_organisations')
-    .select('name')
-    .eq('owner_id', user.id)
-    .single()
+  if (!user) return null
+
+  const navItems = [
+    { href: '/planning', icon: LayoutDashboard, label: 'Planning' },
+    { href: '/employees', icon: Users, label: 'Employés' },
+    { href: '/shifts', icon: Clock, label: 'Shifts' },
+    { href: '/settings', icon: Settings, label: 'Paramètres' },
+  ]
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -33,50 +65,32 @@ export default async function DashboardLayout({
             <Calendar className="h-8 w-8 text-purple-400" />
             <span className="text-xl font-bold text-white">ShiftMate</span>
           </Link>
-          {org && (
-            <p className="text-sm text-gray-500 mt-2 truncate">{org.name}</p>
+          {orgName && (
+            <p className="text-sm text-gray-500 mt-2 truncate">{orgName}</p>
           )}
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
-            <li>
-              <Link 
-                href="/planning" 
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-slate-800 hover:text-white transition-colors"
-              >
-                <LayoutDashboard className="h-5 w-5" />
-                Planning
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/employees" 
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-slate-800 hover:text-white transition-colors"
-              >
-                <Users className="h-5 w-5" />
-                Employés
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/shifts" 
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-slate-800 hover:text-white transition-colors"
-              >
-                <Clock className="h-5 w-5" />
-                Shifts
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/settings" 
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-slate-800 hover:text-white transition-colors"
-              >
-                <Settings className="h-5 w-5" />
-                Paramètres
-              </Link>
-            </li>
+            {navItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <li key={item.href}>
+                  <Link 
+                    href={item.href} 
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive 
+                        ? 'bg-purple-600 text-white' 
+                        : 'text-gray-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </nav>
 
@@ -91,8 +105,8 @@ export default async function DashboardLayout({
             <div className="flex-1 min-w-0">
               <p className="text-sm text-white truncate">{user.email}</p>
             </div>
-            <LogoutButton />
           </div>
+          <LogoutButton />
         </div>
       </aside>
 

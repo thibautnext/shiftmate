@@ -3,13 +3,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Calendar, Mail, Lock, Building2, Loader2, CheckCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { Calendar, Mail, Lock, Building2, Loader2, CheckCircle, User } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [orgName, setOrgName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,37 +19,33 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
 
-    const supabase = createClient()
-    
-    // 1. Create user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name, orgName })
+      })
 
-    if (authError) {
-      setError(authError.message)
-      setLoading(false)
-      return
-    }
+      const data = await res.json()
 
-    // 2. Create organisation via RPC (bypass RLS timing issue)
-    if (authData.user) {
-      const { error: orgError } = await supabase
-        .rpc('create_shiftmate_organisation', {
-          org_name: orgName,
-          user_id: authData.user.id,
-        })
-
-      if (orgError) {
-        setError(orgError.message)
+      if (!res.ok) {
+        setError(data.error || 'Erreur lors de l\'inscription')
         setLoading(false)
         return
       }
-    }
 
-    router.push('/planning')
-    router.refresh()
+      // Stocker le token dans localStorage aussi (pour le client)
+      if (data.token) {
+        localStorage.setItem('shiftmate_token', data.token)
+        localStorage.setItem('shiftmate_user', JSON.stringify(data.user))
+      }
+
+      router.push('/planning')
+      router.refresh()
+    } catch (err) {
+      setError('Une erreur est survenue')
+      setLoading(false)
+    }
   }
 
   return (
@@ -85,6 +81,23 @@ export default function RegisterPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Restaurant Le Gourmet"
                   required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+                Votre nom
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Jean Dupont"
                 />
               </div>
             </div>

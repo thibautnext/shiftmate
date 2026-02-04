@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Calendar, Mail, Lock, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,19 +17,32 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    const supabase = createClient()
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Email ou mot de passe incorrect')
+        setLoading(false)
+        return
+      }
+
+      // Stocker le token dans localStorage (pour le client)
+      if (data.token) {
+        localStorage.setItem('shiftmate_token', data.token)
+        localStorage.setItem('shiftmate_user', JSON.stringify(data.user))
+      }
+
       router.push('/planning')
       router.refresh()
+    } catch (err) {
+      setError('Une erreur est survenue')
+      setLoading(false)
     }
   }
 
