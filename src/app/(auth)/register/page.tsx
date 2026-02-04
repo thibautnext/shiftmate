@@ -33,13 +33,12 @@ export default function RegisterPage() {
       return
     }
 
-    // 2. Create organisation
+    // 2. Create organisation via RPC (bypass RLS timing issue)
     if (authData.user) {
       const { error: orgError } = await supabase
-        .from('shiftmate_organisations')
-        .insert({
-          name: orgName,
-          owner_id: authData.user.id,
+        .rpc('create_shiftmate_organisation', {
+          org_name: orgName,
+          user_id: authData.user.id,
         })
 
       if (orgError) {
