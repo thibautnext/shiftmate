@@ -39,16 +39,13 @@ export default function LoginPage() {
       if (data.token) {
         localStorage.setItem('shiftmate_token', data.token)
         localStorage.setItem('shiftmate_user', JSON.stringify(data.user))
-        alert('Login OK! Redirection vers /planning...')
         window.location.replace('/planning')
       } else {
-        alert('Pas de token dans la réponse: ' + JSON.stringify(data))
         setError('Token manquant dans la réponse')
         setLoading(false)
       }
     } catch (err: any) {
       console.error('Login error:', err)
-      alert('Erreur: ' + (err.message || 'Une erreur est survenue'))
       setError(err.message || 'Une erreur est survenue')
       setLoading(false)
     }

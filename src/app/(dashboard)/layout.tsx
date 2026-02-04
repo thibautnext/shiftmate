@@ -21,15 +21,9 @@ export default function DashboardLayout({
   useEffect(() => {
     // Small delay to ensure localStorage is ready after redirect
     const timer = setTimeout(() => {
-      const rawUser = localStorage.getItem('shiftmate_user')
-      const rawToken = localStorage.getItem('shiftmate_token')
-      alert('Layout check - user: ' + (rawUser ? 'EXISTS' : 'NULL') + ', token: ' + (rawToken ? 'EXISTS' : 'NULL'))
-      
       const currentUser = getUser()
-      console.log('Dashboard layout - currentUser:', currentUser)
       
       if (!currentUser) {
-        console.log('No user found, redirecting to login')
         router.push('/login')
         return
       }
@@ -63,7 +57,7 @@ export default function DashboardLayout({
   const navItems = [
     { href: '/planning', icon: LayoutDashboard, label: 'Planning' },
     { href: '/employees', icon: Users, label: 'Employés' },
-    { href: '/shifts', icon: Clock, label: 'Shifts' },
+    { href: '/shifts', icon: Clock, label: 'Créneaux' },
     { href: '/settings', icon: Settings, label: 'Paramètres' },
   ]
 
