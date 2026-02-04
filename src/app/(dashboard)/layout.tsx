@@ -19,23 +19,35 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const currentUser = getUser()
-    if (!currentUser) {
-      router.push('/login')
-      return
-    }
-    setUser(currentUser)
+    // Small delay to ensure localStorage is ready after redirect
+    const timer = setTimeout(() => {
+      const rawUser = localStorage.getItem('shiftmate_user')
+      const rawToken = localStorage.getItem('shiftmate_token')
+      alert('Layout check - user: ' + (rawUser ? 'EXISTS' : 'NULL') + ', token: ' + (rawToken ? 'EXISTS' : 'NULL'))
+      
+      const currentUser = getUser()
+      console.log('Dashboard layout - currentUser:', currentUser)
+      
+      if (!currentUser) {
+        console.log('No user found, redirecting to login')
+        router.push('/login')
+        return
+      }
+      
+      setUser(currentUser)
+      setLoading(false)
+      
+      // Fetch org name
+      if (currentUser.organisationId) {
+        getOrganisationByOwner(currentUser.id)
+          .then(org => {
+            if (org) setOrgName(org.name)
+          })
+          .catch(() => {})
+      }
+    }, 100)
     
-    // Fetch org name
-    if (currentUser.organisationId) {
-      getOrganisationByOwner(currentUser.id)
-        .then(org => {
-          if (org) setOrgName(org.name)
-        })
-        .catch(() => {})
-    }
-    
-    setLoading(false)
+    return () => clearTimeout(timer)
   }, [router])
 
   if (loading) {

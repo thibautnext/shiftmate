@@ -18,13 +18,16 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      console.log('Attempting login...')
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       })
 
+      console.log('Response status:', res.status)
       const data = await res.json()
+      console.log('Response data:', data)
 
       if (!res.ok) {
         setError(data.error || 'Email ou mot de passe incorrect')
@@ -36,12 +39,17 @@ export default function LoginPage() {
       if (data.token) {
         localStorage.setItem('shiftmate_token', data.token)
         localStorage.setItem('shiftmate_user', JSON.stringify(data.user))
+        alert('Login OK! Redirection vers /planning...')
+        window.location.replace('/planning')
+      } else {
+        alert('Pas de token dans la réponse: ' + JSON.stringify(data))
+        setError('Token manquant dans la réponse')
+        setLoading(false)
       }
-
-      // Force full page navigation to ensure localStorage is read
-      window.location.href = '/planning'
-    } catch (err) {
-      setError('Une erreur est survenue')
+    } catch (err: any) {
+      console.error('Login error:', err)
+      alert('Erreur: ' + (err.message || 'Une erreur est survenue'))
+      setError(err.message || 'Une erreur est survenue')
       setLoading(false)
     }
   }
