@@ -34,14 +34,14 @@ export default function RegisterPage() {
         return
       }
 
-      // Stocker le token dans localStorage aussi (pour le client)
+      // Stocker le token dans localStorage (pour le client)
       if (data.token) {
         localStorage.setItem('shiftmate_token', data.token)
         localStorage.setItem('shiftmate_user', JSON.stringify(data.user))
       }
 
-      router.push('/planning')
-      router.refresh()
+      // Force full page navigation to ensure localStorage is read
+      window.location.href = '/planning'
     } catch (err) {
       setError('Une erreur est survenue')
       setLoading(false)

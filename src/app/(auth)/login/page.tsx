@@ -38,8 +38,8 @@ export default function LoginPage() {
         localStorage.setItem('shiftmate_user', JSON.stringify(data.user))
       }
 
-      router.push('/planning')
-      router.refresh()
+      // Force full page navigation to ensure localStorage is read
+      window.location.href = '/planning'
     } catch (err) {
       setError('Une erreur est survenue')
       setLoading(false)
