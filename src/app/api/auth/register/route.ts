@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { signUp } from '@/lib/auth'
 
+// Force Node.js runtime (bcrypt doesn't work on edge)
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password, name, orgName } = await request.json()
